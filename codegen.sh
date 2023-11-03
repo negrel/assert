@@ -82,3 +82,4 @@ done
 
 gofmt -w ./*.go
 goimports -w ./*.go
+go mod tidy
