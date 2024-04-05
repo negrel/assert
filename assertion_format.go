@@ -453,6 +453,13 @@ func NotErrorIsf(err error, target error, msg string, args ...interface{}) bool 
 	return NotErrorIs(err, target, append([]interface{}{msg}, args...)...)
 }
 
+// NotImplementsf asserts that an object does not implement the specified interface.
+//
+//	assert.NotImplementsf((*MyInterface)(nil), new(MyObject), "error message %s", "formatted")
+func NotImplementsf(interfaceObject interface{}, object interface{}, msg string, args ...interface{}) bool {
+	return NotImplements(interfaceObject, object, append([]interface{}{msg}, args...)...)
+}
+
 // NotNilf asserts that the specified object is not nil.
 //
 //	assert.NotNilf(err, "error message %s", "formatted")

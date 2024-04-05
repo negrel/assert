@@ -28,6 +28,8 @@ var (
 	uint32Type = reflect.TypeOf(uint32(1))
 	uint64Type = reflect.TypeOf(uint64(1))
 
+	uintptrType = reflect.TypeOf(uintptr(1))
+
 	float32Type = reflect.TypeOf(float32(1))
 	float64Type = reflect.TypeOf(float64(1))
 

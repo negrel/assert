@@ -61,6 +61,11 @@ func ObjectsExportedFieldsAreEqual(expected, actual interface{}) {}
 // values are equal.
 func ObjectsAreEqualValues(expected, actual interface{}) {}
 
+// isNumericType returns true if the type is one of:
+// int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64,
+// float32, float64, complex64, complex128
+func isNumericType(t reflect.Type) {}
+
 /* CallerInfo is necessary because the assert functions use the testing object
 internally, causing it to print the file:line of the assert method, rather than where
 the problem actually occurred in calling code.*/
@@ -114,6 +119,11 @@ func labeledOutput(content ...labeledContent) {}
 //
 //	assert.Implements((*MyInterface)(nil), new(MyObject))
 func Implements(interfaceObject interface{}, object interface{}, msgAndArgs ...interface{}) {}
+
+// NotImplements asserts that an object does not implement the specified interface.
+//
+//	assert.NotImplements((*MyInterface)(nil), new(MyObject))
+func NotImplements(interfaceObject interface{}, object interface{}, msgAndArgs ...interface{}) {}
 
 // IsType asserts that the specified objects are of the same type.
 func IsType(expectedType interface{}, object interface{}, msgAndArgs ...interface{}) {}
@@ -192,9 +202,6 @@ func Exactly(expected, actual interface{}, msgAndArgs ...interface{}) {}
 //
 //	assert.NotNil(err)
 func NotNil(object interface{}, msgAndArgs ...interface{}) {}
-
-// containsKind checks if a specified kind in the slice of kinds.
-func containsKind(kinds []reflect.Kind, kind reflect.Kind) {}
 
 // isNil checks if a specified object is nil or not, without Failing.
 func isNil(object interface{}) {}

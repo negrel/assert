@@ -31,12 +31,12 @@ func httpCode(handler http.HandlerFunc, method, url string, values url.Values) (
 func HTTPSuccess(handler http.HandlerFunc, method, url string, values url.Values, msgAndArgs ...interface{}) bool {
 	code, err := httpCode(handler, method, url, values)
 	if err != nil {
-		Fail(fmt.Sprintf("Failed to build test request, got error: %s", err))
+		Fail(fmt.Sprintf("Failed to build test request, got error: %s", err), msgAndArgs...)
 	}
 
 	isSuccessCode := code >= http.StatusOK && code <= http.StatusPartialContent
 	if !isSuccessCode {
-		Fail(fmt.Sprintf("Expected HTTP success status code for %q but received %d", url+"?"+values.Encode(), code))
+		Fail(fmt.Sprintf("Expected HTTP success status code for %q but received %d", url+"?"+values.Encode(), code), msgAndArgs...)
 	}
 
 	return isSuccessCode
@@ -50,12 +50,12 @@ func HTTPSuccess(handler http.HandlerFunc, method, url string, values url.Values
 func HTTPRedirect(handler http.HandlerFunc, method, url string, values url.Values, msgAndArgs ...interface{}) bool {
 	code, err := httpCode(handler, method, url, values)
 	if err != nil {
-		Fail(fmt.Sprintf("Failed to build test request, got error: %s", err))
+		Fail(fmt.Sprintf("Failed to build test request, got error: %s", err), msgAndArgs...)
 	}
 
 	isRedirectCode := code >= http.StatusMultipleChoices && code <= http.StatusTemporaryRedirect
 	if !isRedirectCode {
-		Fail(fmt.Sprintf("Expected HTTP redirect status code for %q but received %d", url+"?"+values.Encode(), code))
+		Fail(fmt.Sprintf("Expected HTTP redirect status code for %q but received %d", url+"?"+values.Encode(), code), msgAndArgs...)
 	}
 
 	return isRedirectCode
@@ -69,12 +69,12 @@ func HTTPRedirect(handler http.HandlerFunc, method, url string, values url.Value
 func HTTPError(handler http.HandlerFunc, method, url string, values url.Values, msgAndArgs ...interface{}) bool {
 	code, err := httpCode(handler, method, url, values)
 	if err != nil {
-		Fail(fmt.Sprintf("Failed to build test request, got error: %s", err))
+		Fail(fmt.Sprintf("Failed to build test request, got error: %s", err), msgAndArgs...)
 	}
 
 	isErrorCode := code >= http.StatusBadRequest
 	if !isErrorCode {
-		Fail(fmt.Sprintf("Expected HTTP error status code for %q but received %d", url+"?"+values.Encode(), code))
+		Fail(fmt.Sprintf("Expected HTTP error status code for %q but received %d", url+"?"+values.Encode(), code), msgAndArgs...)
 	}
 
 	return isErrorCode
@@ -88,12 +88,12 @@ func HTTPError(handler http.HandlerFunc, method, url string, values url.Values, 
 func HTTPStatusCode(handler http.HandlerFunc, method, url string, values url.Values, statuscode int, msgAndArgs ...interface{}) bool {
 	code, err := httpCode(handler, method, url, values)
 	if err != nil {
-		Fail(fmt.Sprintf("Failed to build test request, got error: %s", err))
+		Fail(fmt.Sprintf("Failed to build test request, got error: %s", err), msgAndArgs...)
 	}
 
 	successful := code == statuscode
 	if !successful {
-		Fail(fmt.Sprintf("Expected HTTP status code %d for %q but received %d", statuscode, url+"?"+values.Encode(), code))
+		Fail(fmt.Sprintf("Expected HTTP status code %d for %q but received %d", statuscode, url+"?"+values.Encode(), code), msgAndArgs...)
 	}
 
 	return successful
@@ -125,7 +125,7 @@ func HTTPBodyContains(handler http.HandlerFunc, method, url string, values url.V
 
 	contains := strings.Contains(body, fmt.Sprint(str))
 	if !contains {
-		Fail(fmt.Sprintf("Expected response body for \"%s\" to contain \"%s\" but found \"%s\"", url+"?"+values.Encode(), str, body))
+		Fail(fmt.Sprintf("Expected response body for \"%s\" to contain \"%s\" but found \"%s\"", url+"?"+values.Encode(), str, body), msgAndArgs...)
 	}
 
 	return contains
@@ -142,7 +142,7 @@ func HTTPBodyNotContains(handler http.HandlerFunc, method, url string, values ur
 
 	contains := strings.Contains(body, fmt.Sprint(str))
 	if contains {
-		Fail(fmt.Sprintf("Expected response body for \"%s\" to NOT contain \"%s\" but found \"%s\"", url+"?"+values.Encode(), str, body))
+		Fail(fmt.Sprintf("Expected response body for \"%s\" to NOT contain \"%s\" but found \"%s\"", url+"?"+values.Encode(), str, body), msgAndArgs...)
 	}
 
 	return !contains
