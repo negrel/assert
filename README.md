@@ -1,6 +1,8 @@
-# `assert` - Zero cost debug assertions.
+<h1 align="center">
+    <img alt="gopher illustration" src="https://spirited.io/wp-content/uploads/elementor/thumbs/1-prc44rwae7cvpfcnuotwqkc46fiz99oyv9553ip1tc.jpg">
+</h1>
 
-<p>
+<p align="center">
 	<a href="https://pkg.go.dev/github.com/negrel/assert">
 		<img alt="PkgGoDev" src="https://pkg.go.dev/badge/github.com/negrel/assert">
 	</a>
@@ -9,11 +11,13 @@
 	</a>
 </p>
 
+# `assert` - Zero cost debug assertions.
+
 This package provides zero cost debug assertions to your Go programs. It is based
 on the excellent [`github.com/stretchr/testify/assert`](https://github.com/stretchr/testify)
 package and provide the same API (minus `t testing.T` parameter).
 
-## Why ?
+## Why?
 
 This is a complete rewrite of [`debuggo`](https://github.com/negrel/debuggo) that aims
 to be up to date and more maintainable.
@@ -23,6 +27,11 @@ It aims to provide the same API as [`github.com/stretchr/testify/assert`](https:
 * Allows for very readable code
 * Optionally annotate each assertion with a message
 * No performance impact on production build (see benchmarks)
+
+## How does it works?
+
+[Read my blog post](https://www.negrel.dev/blog/zero-cost-debug-assertions-in-go/)
+about to understand how `assert` works and why it is designed that way.
 
 ## Getting started
 
