@@ -136,8 +136,8 @@ PASS
 ok      github.com/negrel/assert/tests  2.531s
 ```
 
-However, keep in mind that `assert` slightly increase binary size (~1M). If you may know
-the reason please contact me.
+However, keep in mind that `assert` may slightly increase binary size (~100 KiB)
+as it imports `net/http` and `reflect`.
 
 ## Contributing
 
