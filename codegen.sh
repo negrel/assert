@@ -3,7 +3,7 @@
 set -euo pipefail
 shopt -s inherit_errexit
 
-testify_file_skiplist=("assertion_forward.go" "forward_assertions.go")
+testify_file_skiplist=("assertion_forward.go" "forward_assertions.go" "doc.go")
 
 # Copy testify files.
 for f in ./testify/assert/*.go; do

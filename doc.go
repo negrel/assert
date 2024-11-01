@@ -1,45 +1,27 @@
-// Package assert provides a set of comprehensive testing tools for use with the normal Go testing system.
+// Package assert provides a set of comprehensive debug assertions.
 //
 // # Example Usage
 //
-// The following is a complete example using assert in a standard test function:
+// The following is a complete example using assert in a function:
 //
 //	import (
-//	  "testing"
-//	  "github.com/stretchr/testify/assert"
+//	  "github.com/negrel/assert"
 //	)
 //
-//	func TestSomething(t *testing.T) {
-//
-//	  var a string = "Hello"
-//	  var b string = "Hello"
-//
-//	  assert.Equal(a, b, "The two words should be the same.")
-//
+//	func Divide(a, b int) int {
+//	  assert.NotEqual(b, 0, "Can't divide by 0.")
+//	  return a / b
 //	}
 //
-// if you assert many times, use the format below:
+// # Debug Assertions
 //
-//	import (
-//	  "testing"
-//	  "github.com/stretchr/testify/assert"
-//	)
-//
-//	func TestSomething(t *testing.T) {
-//	  assert := assert.New(t)
-//
-//	  var a string = "Hello"
-//	  var b string = "Hello"
-//
-//	  assert.Equal(a, b, "The two words should be the same.")
-//	}
-//
-// # Assertions
-//
-// Assertions allow you to easily write test code, and are global funcs in the `assert` package.
-// All assertion functions take, as the first argument, the `*testing.T` object provided by the
-// testing framework. This allows the assertion funcs to write the failings and other details to
-// the correct place.
+// Debug assertions are programming statements that help developers catch
+// logical errors during development by verifying assumptions about the
+// program's state. They're typically used to check conditions that should
+// always be true during normal program execution. If the condition is false,
+// the assertions is either wrong or there is a programming error. In
+// both case, program panics if it was compiled with the `assert` tags
+// (`go build -tags assert ./path/to/my/package`)
 //
 // Every assertion function also takes an optional string message as the final argument,
 // allowing custom error messages to be appended to the message the assertion method outputs.
