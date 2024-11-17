@@ -28,6 +28,32 @@ It aims to provide the same API as [`github.com/stretchr/testify/assert`](https:
 * Optionally annotate each assertion with a message
 * No performance impact on production build (see benchmarks)
 
+Debug assertions main use is to assert invariant that can't be encoded in the
+type systems. For example, a method that should be called only when mutex is
+locked:
+
+```go
+package mypkg
+
+import (
+	"sync"
+	"github.com/negrel/assert"
+)
+
+type myType struct {
+	mu sync.Mutex
+	// other fields...
+}
+
+// doWork perform internal work. Caller must hold mutex while calling this
+// function.
+func (mt *myType) doWork(k string) {
+	assert.Locked(&mt.mu) // panic if assertions are enabled and mutex isn't locked
+
+	// Do work...
+}
+```
+
 ## How does it works?
 
 [Read my blog post](https://www.negrel.dev/blog/zero-cost-debug-assertions-in-go/)
@@ -40,65 +66,41 @@ Here is our example program:
 ```go
 package main
 
-import "github.com/negrel/assert"
-
-func safeIndex(slice []string, index int) string {
-	// Ensure index is not out of bounds.
-	assert.GreaterOrEqual(index, 0, "negative index not allowed")
-	assert.Lessf(index, len(slice), "index out of bounds (slice: %v)", slice)
-
-	return slice[index]
-}
+import (
+	"github.com/negrel/assert"
+)
 
 func main() {
-	days := []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
-	println(safeIndex(days, 8))
+	assert.True(false)
+	println("Hello world!")
 }
 ```
 
-A simple `go run .` will produce the following error:
-```
-panic: runtime error: index out of range [8] with length 7
+A simple `go run .` will simply print `Hello world!` as all `assert` functions
+are removed by the compiler.
 
-goroutine 1 [running]:
-main.safeIndex(...)
-        /home/anegrel/code/go/assert/example/main.go:10
-main.main()
-        /home/anegrel/code/go/assert/example/main.go:15 +0xd6
-exit status 2
-```
-
-Now, if you enable assertions with a compile time flags, `go run -tags assert .`,
-you will get something similar to:
+Now, if we compile and run it with assertions enabled `go run -tags assert .`,
+it will output something like:
 
 ```
 panic:
         Error Trace:    /home/anegrel/code/go/assert/example/main.go:8
-                                                /home/anegrel/code/go/assert/example/main.go:15
-                                                /nix/store/dwmb0qcai52d0zkgpm6f5ifx2a8yvsdg-go-1.21.3/share/go/src/runtime/proc.go:267
-                                                /nix/store/dwmb0qcai52d0zkgpm6f5ifx2a8yvsdg-go-1.21.3/share/go/src/runtime/asm_amd64.s:1650
-        Error:          "8" is not less than "7"
-        Messages:       index out of bounds (slice: [Monday Tuesday Wednesday Thursday Friday Saturday Sunday])
+                                                /usr/share/go/src/runtime/proc.go:267
+                                                /usr/share/go/src/runtime/asm_amd64.s:1650
+        Error:          Should be true
 
 
 goroutine 1 [running]:
-github.com/negrel/assert.Fail({0xc0001e2168, 0x18}, {0xc0001be240, 0x2, 0x2})
-        /home/anegrel/code/go/assert/assertions.go:331 +0x168
-github.com/negrel/assert.compareTwoValues({0x53eb00, 0x695cc0}, {0x53eb00, 0x695cb8}, {0xc0001f5e88, 0x1, 0x40e285?}, {0x57307c, 0x1a}, {0xc0001be240, ...})
-        /home/anegrel/code/go/assert/assertion_compare.go:425 +0x2af
-github.com/negrel/assert.Less(...)
-        /home/anegrel/code/go/assert/assertion_compare.go:380
-github.com/negrel/assert.Lessf(...)
-        /home/anegrel/code/go/assert/assertion_format.go:355
-main.safeIndex({0xc0001bdea0?, 0x7, 0x7}, 0x8)
-        /home/anegrel/code/go/assert/example/main.go:8 +0x234
+github.com/negrel/assert.Fail({0x568dc2, 0xe}, {0x0, 0x0, 0x0})
+        /home/anegrel/code/go/assert/assertions.go:349 +0x168
+github.com/negrel/assert.True(...)
+        /home/anegrel/code/go/assert/assertions.go:754
 main.main()
-        /home/anegrel/code/go/assert/example/main.go:15 +0xb4
+        /home/anegrel/code/go/assert/example/main.go:8 +0x27
 exit status 2
 ```
 
-That's the same output as `testify/assert` output except that we have a stacktrace
-because this is a panic.
+Note that most `go` subcommands (build, run, test, ...) supports `-tags` flag.
 
 ## Benchmarks
 
