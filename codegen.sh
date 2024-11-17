@@ -23,7 +23,7 @@ rm -f ./*_test.go
 
 for f in ./*.go; do
 	# Remove TestingT arguments in function signature.
-	sed -i 's/t TestingT, //g' "$f"
+	sed -i -E 's/(t )?TestingT, //g' "$f"
 
 	# Remove TestingT arguments in function call.
 	sed -i 's/(t, /(/g' "$f"
