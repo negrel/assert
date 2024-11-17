@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"regexp"
+	"sync"
 	"testing"
 
 	"github.com/negrel/assert"
@@ -804,6 +805,36 @@ func TestAssertZero(t *testing.T) {
 	t.Run("NotZeroOk", func(t *testing.T) {
 		require.Panics(t, func() {
 			assert.Zero(true)
+		})
+	})
+}
+
+func TestAssertLocked(t *testing.T) {
+	t.Run("Locked", func(t *testing.T) {
+		var mu sync.Mutex
+		mu.Lock()
+		assert.Locked(&mu)
+	})
+
+	t.Run("Unlocked", func(t *testing.T) {
+		var mu sync.Mutex
+		require.Panics(t, func() {
+			assert.Locked(&mu)
+		})
+	})
+}
+
+func TestAssertUnlocked(t *testing.T) {
+	t.Run("Unlocked", func(t *testing.T) {
+		var mu sync.Mutex
+		assert.Unlocked(&mu)
+	})
+
+	t.Run("Locked", func(t *testing.T) {
+		var mu sync.Mutex
+		mu.Lock()
+		require.Panics(t, func() {
+			assert.Unlocked(&mu)
 		})
 	})
 }

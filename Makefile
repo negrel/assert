@@ -4,7 +4,7 @@ codegen:
 
 .PHONY: clear
 clear:
-	rm -f ./*assertion*.go
+	rm -f ./*assertion*.go ./prod_*
 
 .PHONY: lint
 lint:

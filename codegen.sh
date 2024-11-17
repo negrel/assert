@@ -3,7 +3,7 @@
 set -euo pipefail
 shopt -s inherit_errexit
 
-testify_file_skiplist=("assertion_forward.go" "forward_assertions.go" "doc.go")
+testify_file_skiplist=("assertion_forward.go" "forward_assertions.go" "doc.go" "extra")
 
 # Copy testify files.
 for f in ./testify/assert/*.go; do
@@ -62,8 +62,10 @@ for f in *.go; do
 		continue
 	fi
 
-	# Prepend build tag to files.
-	sed -i '1i //go:build assert' "$f"
+	# Prepend build tag to files if needed.
+	if ! grep "//go:build assert" < "$f" > /dev/null; then
+		sed -i '1i //go:build assert' "$f"
+	fi
 
 	cp "$f" "prod_$f"
 
