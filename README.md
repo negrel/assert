@@ -101,6 +101,8 @@ exit status 2
 ```
 
 Note that most `go` subcommands (build, run, test, ...) supports `-tags` flag.
+You may want to set `GOFLAGS` environment variable to `-tags assert` make it
+permanent and avoid specifying it on each command.
 
 ## Benchmarks
 
