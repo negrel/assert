@@ -27,16 +27,16 @@ func Locked(locker TryLocker, msgAndArgs ...any) {}
 //	assert.IsDecreasing([]string{"b", "a"})
 func Lockedf(locker TryLocker, msg string, args ...any) {}
 
-// NotLocked asserts that the [TryLocker] is not locked.
+// Unlocked asserts that the [TryLocker] is unlocked.
 //
 //	assert.IsDecreasing([]int{2, 1, 0})
 //	assert.IsDecreasing([]float{2, 1})
 //	assert.IsDecreasing([]string{"b", "a"})
-func NotLocked(locker TryLocker, msgAndArgs ...any) {}
+func Unlocked(locker TryLocker, msgAndArgs ...any) {}
 
-// NotLockedf asserts that the [TryLocker] is not locked.
+// UnLockedf asserts that the [TryLocker] is unlocked.
 //
 //	assert.IsDecreasing([]int{2, 1, 0})
 //	assert.IsDecreasing([]float{2, 1})
 //	assert.IsDecreasing([]string{"b", "a"})
-func NotLockedf(locker TryLocker, msg string, args ...any) {}
+func Unlockedf(locker TryLocker, msg string, args ...any) {}

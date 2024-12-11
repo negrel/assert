@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	// Wrapper around gopkg.in/yaml.v3
 )
 
 //go:generate sh -c "cd ../_codegen && go build && cd - && ../_codegen/_codegen -output-package=assert -template=assertion_format.go.tmpl"
@@ -31,6 +32,10 @@ type BoolAssertionFunc func(bool, ...interface{}) bool
 // ErrorAssertionFunc is a common function prototype when validating an error value.  Can be useful
 // for table driven tests.
 type ErrorAssertionFunc func(error, ...interface{}) bool
+
+// PanicAssertionFunc is a common function prototype when validating a panic value.  Can be useful
+// for table driven tests.
+type PanicAssertionFunc = func(f PanicTestFunc, msgAndArgs ...interface{}) bool
 
 // Comparison is a custom function that returns true on success and false on failure
 type Comparison func() (success bool)
@@ -157,8 +162,10 @@ func Same(expected, actual interface{}, msgAndArgs ...interface{}) {}
 // determined based on the equality of both type and value.
 func NotSame(expected, actual interface{}, msgAndArgs ...interface{}) {}
 
-// samePointers compares two generic interface objects and returns whether
-// they point to the same object
+// samePointers checks if two generic interface objects are pointers of the same
+// type pointing to the same object. It returns two values: same indicating if
+// they are the same type and point to the same object, and ok indicating that
+// both inputs are pointers.
 func samePointers(first, second interface{}) {}
 
 // formatUnequalValues takes two values of arbitrary types and returns string
@@ -175,8 +182,8 @@ func formatUnequalValues(expected, actual interface{}) {}
 // bufio.MaxScanTokenSize max line length that the go testing framework imposes.
 func truncatingFormat(data interface{}) {}
 
-// EqualValues asserts that two objects are equal or convertible to the same types
-// and equal.
+// EqualValues asserts that two objects are equal or convertible to the larger
+// type and equal.
 //
 //	assert.EqualValues(uint32(123), int32(123))
 func EqualValues(expected, actual interface{}, msgAndArgs ...interface{}) {}
@@ -314,6 +321,18 @@ func isList(list interface{}, msgAndArgs ...interface{}) {}
 func diffLists(listA, listB interface{}) {}
 
 func formatListDiff(listA, listB interface{}, extraA, extraB []interface{}) {}
+
+// NotElementsMatch asserts that the specified listA(array, slice...) is NOT equal to specified
+// listB(array, slice...) ignoring the order of the elements. If there are duplicate elements,
+// the number of appearances of each of them in both lists should not match.
+// This is an inverse of ElementsMatch.
+//
+// assert.NotElementsMatch([1, 1, 2, 3], [1, 1, 2, 3]) -> false
+//
+// assert.NotElementsMatch([1, 1, 2, 3], [1, 2, 3]) -> true
+//
+// assert.NotElementsMatch([1, 2, 3], [1, 2, 4]) -> true
+func NotElementsMatch(listA, listB interface{}, msgAndArgs ...interface{}) {}
 
 // Condition uses a Comparison to assert a complex condition.
 func Condition(comp Comparison, msgAndArgs ...interface{}) {}
@@ -456,7 +475,6 @@ func NoDirExists(path string, msgAndArgs ...interface{}) {}
 func JSONEq(expected string, actual string, msgAndArgs ...interface{}) {}
 
 // YAMLEq asserts that two YAML strings are equivalent.
-func YAMLEq(expected string, actual string, msgAndArgs ...interface{}) {}
 
 func typeAndKind(v interface{}) {}
 
@@ -483,7 +501,7 @@ var spewConfigStringerEnabled = spew.ConfigState{
 	MaxDepth:                10,
 }
 
-type tHelper interface {
+type tHelper = interface {
 	Helper()
 }
 
@@ -496,20 +514,27 @@ func Eventually(condition func() bool, waitFor time.Duration, tick time.Duration
 
 // CollectT implements the TestingT interface and collects all errors.
 type CollectT struct {
+	// A slice of errors. Non-nil slice denotes a failure.
+	// If it's non-nil but len(c.errors) == 0, this is also a failure
+	// obtained by direct c.FailNow() call.
 	errors []error
 }
 
 // Errorf collects the error.
 func (c *CollectT) Errorf(format string, args ...interface{}) {}
 
-// FailNow panics.
-func (*CollectT) FailNow() {}
+// FailNow stops execution by calling runtime.Goexit.
+func (c *CollectT) FailNow() {}
 
 // Deprecated: That was a method for internal usage that should not have been published. Now just panics.
 func (*CollectT) Reset() {}
 
 // Deprecated: That was a method for internal usage that should not have been published. Now just panics.
 func (*CollectT) Copy(TestingT) {}
+
+func (c *CollectT) fail() {}
+
+func (c *CollectT) failed() {}
 
 // EventuallyWithT asserts that given condition will be met in waitFor time,
 // periodically checking target function each tick. In contrast to Eventually,
@@ -534,12 +559,16 @@ func Never(condition func() bool, waitFor time.Duration, tick time.Duration, msg
 // This is a wrapper for errors.Is.
 func ErrorIs(err, target error, msgAndArgs ...interface{}) {}
 
-// NotErrorIs asserts that at none of the errors in err's chain matches target.
+// NotErrorIs asserts that none of the errors in err's chain matches target.
 // This is a wrapper for errors.Is.
 func NotErrorIs(err, target error, msgAndArgs ...interface{}) {}
 
 // ErrorAs asserts that at least one of the errors in err's chain matches target, and if so, sets target to that error value.
 // This is a wrapper for errors.As.
 func ErrorAs(err error, target interface{}, msgAndArgs ...interface{}) {}
+
+// NotErrorAs asserts that none of the errors in err's chain matches target,
+// but if so, sets target to that error value.
+func NotErrorAs(err error, target interface{}, msgAndArgs ...interface{}) {}
 
 func buildErrorChainString(err error) {}

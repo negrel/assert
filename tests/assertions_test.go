@@ -8,8 +8,22 @@ import (
 	"testing"
 
 	"github.com/negrel/assert"
-	"github.com/stretchr/testify/require"
 )
+
+type TestingT interface {
+	Errorf(format string, args ...interface{})
+	FailNow()
+}
+
+func requirePanics(t *testing.T, cb func()) {
+	defer func() {
+		if err := recover(); err == nil {
+			t.Fatal("no panics")
+		}
+	}()
+
+	cb()
+}
 
 func BenchmarkSliceIndexWithoutBoundCheckAssertions(b *testing.B) {
 	get := func(slice []string, index int) string {
@@ -43,7 +57,7 @@ func TestAssertCondition(t *testing.T) {
 	})
 
 	t.Run("ReturnsFalsePanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.Condition(func() bool {
 				return false
 			})
@@ -57,7 +71,7 @@ func TestAssertContains(t *testing.T) {
 			assert.Contains("Hello World", "World")
 		})
 		t.Run("AbsentPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.Contains("Hello World", "bye")
 			})
 		})
@@ -68,7 +82,7 @@ func TestAssertContains(t *testing.T) {
 			assert.Contains([]string{"Hello", "World"}, "World")
 		})
 		t.Run("AbsentPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.Contains([]string{"Hello", "World"}, "bye")
 			})
 		})
@@ -79,7 +93,7 @@ func TestAssertContains(t *testing.T) {
 			assert.Contains(map[string]string{"Hello": "World"}, "Hello")
 		})
 		t.Run("AbsentPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.Contains(map[string]string{"Hello": "World"}, "bye")
 			})
 		})
@@ -92,7 +106,7 @@ func TestAssertDirExists(t *testing.T) {
 	})
 
 	t.Run("DoesNotExistPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.DirExists("./nonexistentdir")
 		})
 	})
@@ -104,7 +118,7 @@ func TestAssertElementsMatch(t *testing.T) {
 			assert.ElementsMatch([3]int{1, 2, 3}, [3]int{3, 2, 1})
 		})
 		t.Run("NoMatchPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.ElementsMatch([3]int{4, 5, 6}, [3]int{3, 2, 1})
 			})
 		})
@@ -115,7 +129,7 @@ func TestAssertElementsMatch(t *testing.T) {
 			assert.ElementsMatch([]int{1, 2, 3}, []int{3, 2, 1})
 		})
 		t.Run("NoMatchPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.ElementsMatch([]int{4, 5, 6}, []int{3, 2, 1})
 			})
 		})
@@ -128,7 +142,7 @@ func TestAssertEmpty(t *testing.T) {
 			assert.Empty([]string{})
 		})
 		t.Run("NotEmptyPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.Empty([]string{""})
 			})
 		})
@@ -139,7 +153,7 @@ func TestAssertEmpty(t *testing.T) {
 			assert.Empty(nil)
 		})
 		t.Run("NotEmptyPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.Empty(t)
 			})
 		})
@@ -150,7 +164,7 @@ func TestAssertEmpty(t *testing.T) {
 			assert.Empty("")
 		})
 		t.Run("NotEmptyPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.Empty("Hello world")
 			})
 		})
@@ -161,7 +175,7 @@ func TestAssertEmpty(t *testing.T) {
 			assert.Empty(false)
 		})
 		t.Run("NotEmptyPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.Empty(true)
 			})
 		})
@@ -174,7 +188,7 @@ func TestAssertEqual(t *testing.T) {
 			assert.Equal(123, 123)
 		})
 		t.Run("NotEqualPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.Equal(123, 456)
 			})
 		})
@@ -185,7 +199,7 @@ func TestAssertEqual(t *testing.T) {
 			assert.Equal(false, false)
 		})
 		t.Run("NotEqualPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.Equal(true, false)
 			})
 		})
@@ -197,7 +211,7 @@ func TestAssertEqualError(t *testing.T) {
 		assert.EqualError(errors.New("foo"), "foo")
 	})
 	t.Run("NotEqualPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.EqualError(errors.New("foo"), "bar")
 		})
 	})
@@ -215,7 +229,7 @@ func TestAssertEqualExportedValue(t *testing.T) {
 		assert.EqualExportedValues(expected, actual)
 	})
 	t.Run("NotEqualPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			expected := S{-1, true}
 			actual := S{-1, false}
 			assert.EqualExportedValues(expected, actual)
@@ -228,7 +242,7 @@ func TestAssertEqualValues(t *testing.T) {
 		assert.EqualValues(uint32(123), uint64(123))
 	})
 	t.Run("NotEqualPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.EqualValues(uint32(123), uint32(456))
 		})
 	})
@@ -239,7 +253,7 @@ func TestAssertError(t *testing.T) {
 		assert.Error(errors.New("foo"))
 	})
 	t.Run("NoErrorPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.Error(nil)
 		})
 	})
@@ -251,7 +265,7 @@ func TestAssertErrorAs(t *testing.T) {
 	})
 	t.Run("NoMatchOk", func(t *testing.T) {
 		// ErrorAs never panics
-		// require.Panics(t, func() {
+		// requirePanics(t, func() {
 		assert.ErrorAs(errors.Join(errors.New("foo"), errors.New("bar")), &io.EOF)
 		// })
 	})
@@ -262,7 +276,7 @@ func TestAssertErrorContains(t *testing.T) {
 		assert.ErrorContains(errors.New("foobarqux"), "qux")
 	})
 	t.Run("DoesNotContainPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.ErrorContains(errors.New("foobarqux"), "baz")
 		})
 	})
@@ -273,7 +287,7 @@ func TestAssertErrorIs(t *testing.T) {
 		assert.ErrorIs(errors.Join(errors.New("foo"), io.EOF), io.EOF)
 	})
 	t.Run("DoesNotMatchPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.ErrorIs(errors.Join(errors.New("foo"), errors.New("bar")), io.EOF)
 		})
 	})
@@ -284,7 +298,7 @@ func TestAssertExactly(t *testing.T) {
 		assert.Exactly(uint32(123), uint32(123))
 	})
 	t.Run("NotEqualPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.Exactly(uint32(123), uint64(123))
 		})
 	})
@@ -292,7 +306,7 @@ func TestAssertExactly(t *testing.T) {
 
 func TestAssertFalse(t *testing.T) {
 	t.Run("TrueValuePanic", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.False(true)
 		})
 	})
@@ -308,7 +322,7 @@ func TestAssertFileExists(t *testing.T) {
 	})
 
 	t.Run("DoesNotExistPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.FileExists("nonexistentfile")
 		})
 	})
@@ -320,13 +334,13 @@ func TestAssertGreater(t *testing.T) {
 	})
 
 	t.Run("EqualPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.Greater(2, 2)
 		})
 	})
 
 	t.Run("LessPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.Greater(1, 2)
 		})
 	})
@@ -342,7 +356,7 @@ func TestAssertGreaterOrEqual(t *testing.T) {
 	})
 
 	t.Run("LessPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.GreaterOrEqual(1, 2)
 		})
 	})
@@ -350,11 +364,11 @@ func TestAssertGreaterOrEqual(t *testing.T) {
 
 func TestAssertImplements(t *testing.T) {
 	t.Run("ImplementsOk", func(t *testing.T) {
-		assert.Implements((*require.TestingT)(nil), t)
+		assert.Implements((*TestingT)(nil), t)
 	})
 
 	t.Run("DoesNotImplementPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.Implements((interface{ abc() })(nil), t)
 		})
 	})
@@ -366,7 +380,7 @@ func TestAssertInDelta(t *testing.T) {
 	})
 
 	t.Run("NotWithinPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.InDelta(1, 3, 0)
 		})
 	})
@@ -378,7 +392,7 @@ func TestAssertIsDecreasing(t *testing.T) {
 	})
 
 	t.Run("NotDecreasingPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.IsDecreasing([]int{3, 2, 3})
 		})
 	})
@@ -390,7 +404,7 @@ func TestAssertIsIncreasing(t *testing.T) {
 	})
 
 	t.Run("NotIncreasingPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.IsIncreasing([]int{1, 2, 1})
 		})
 	})
@@ -402,7 +416,7 @@ func TestAssertIsNonDecreasing(t *testing.T) {
 	})
 
 	t.Run("DecreasingPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.IsNonDecreasing([]int{1, 2, 1})
 		})
 	})
@@ -414,7 +428,7 @@ func TestAssertIsNonIncreasing(t *testing.T) {
 	})
 
 	t.Run("DecreasingPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.IsNonIncreasing([]int{3, 2, 3})
 		})
 	})
@@ -426,7 +440,7 @@ func TestAssertIsType(t *testing.T) {
 	})
 
 	t.Run("NotMatchPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.IsType(uint32(0), int32(0))
 		})
 	})
@@ -438,7 +452,7 @@ func TestAssertJSONEq(t *testing.T) {
 	})
 
 	t.Run("NotMatchPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.JSONEq(`{"bye": "world", "foo": "bar"}`, `{"foo": "bar", "hello": "world"}`)
 		})
 	})
@@ -450,7 +464,7 @@ func TestAssertLen(t *testing.T) {
 	})
 
 	t.Run("NotMatchPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.Len([]int{1, 2, 3}, 0)
 		})
 	})
@@ -462,13 +476,13 @@ func TestAssertLess(t *testing.T) {
 	})
 
 	t.Run("EqualPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.Less(2, 2)
 		})
 	})
 
 	t.Run("GreaterPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.Less(2, 1)
 		})
 	})
@@ -484,7 +498,7 @@ func TestAssertLessOrEqual(t *testing.T) {
 	})
 
 	t.Run("GreaterPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.LessOrEqual(2, 1)
 		})
 	})
@@ -496,7 +510,7 @@ func TestAssertNegative(t *testing.T) {
 	})
 
 	t.Run("PositivePanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.Negative(2)
 		})
 	})
@@ -508,7 +522,7 @@ func TestAssertNil(t *testing.T) {
 	})
 
 	t.Run("NotNilPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.Nil(t)
 		})
 	})
@@ -516,7 +530,7 @@ func TestAssertNil(t *testing.T) {
 
 func TestAssertNoDirExists(t *testing.T) {
 	t.Run("ExistPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.NoDirExists(".")
 		})
 	})
@@ -528,7 +542,7 @@ func TestAssertNoDirExists(t *testing.T) {
 
 func TestAssertNoError(t *testing.T) {
 	t.Run("NoErrorOk", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.NoError(errors.New("foo"))
 		})
 	})
@@ -540,7 +554,7 @@ func TestAssertNoError(t *testing.T) {
 
 func TestAssertNoFileExists(t *testing.T) {
 	t.Run("ExistsPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.NoFileExists("assertions_test.go")
 		})
 	})
@@ -553,7 +567,7 @@ func TestAssertNoFileExists(t *testing.T) {
 func TestAssertNotContains(t *testing.T) {
 	t.Run("Substring", func(t *testing.T) {
 		t.Run("PresentPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.NotContains("Hello World", "World")
 			})
 		})
@@ -564,7 +578,7 @@ func TestAssertNotContains(t *testing.T) {
 
 	t.Run("SliceElement", func(t *testing.T) {
 		t.Run("PresentPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.NotContains([]string{"Hello", "World"}, "World")
 			})
 		})
@@ -575,7 +589,7 @@ func TestAssertNotContains(t *testing.T) {
 
 	t.Run("MapKey", func(t *testing.T) {
 		t.Run("PresentPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.NotContains(map[string]string{"Hello": "World"}, "Hello")
 			})
 		})
@@ -588,7 +602,7 @@ func TestAssertNotContains(t *testing.T) {
 func TestAssertNotEmpty(t *testing.T) {
 	t.Run("Slice", func(t *testing.T) {
 		t.Run("EmptyPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.NotEmpty([]string{})
 			})
 		})
@@ -599,7 +613,7 @@ func TestAssertNotEmpty(t *testing.T) {
 
 	t.Run("Ptr", func(t *testing.T) {
 		t.Run("EmptyPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.NotEmpty(nil)
 			})
 		})
@@ -610,7 +624,7 @@ func TestAssertNotEmpty(t *testing.T) {
 
 	t.Run("String", func(t *testing.T) {
 		t.Run("EmptyPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.NotEmpty("")
 			})
 		})
@@ -621,7 +635,7 @@ func TestAssertNotEmpty(t *testing.T) {
 
 	t.Run("Bool", func(t *testing.T) {
 		t.Run("EmptyPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.NotEmpty(false)
 			})
 		})
@@ -634,7 +648,7 @@ func TestAssertNotEmpty(t *testing.T) {
 func TestAssertNotEqual(t *testing.T) {
 	t.Run("Int", func(t *testing.T) {
 		t.Run("EqualPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.NotEqual(123, 123)
 			})
 		})
@@ -645,7 +659,7 @@ func TestAssertNotEqual(t *testing.T) {
 
 	t.Run("Bool", func(t *testing.T) {
 		t.Run("EqualPanics", func(t *testing.T) {
-			require.Panics(t, func() {
+			requirePanics(t, func() {
 				assert.NotEqual(false, false)
 			})
 		})
@@ -657,7 +671,7 @@ func TestAssertNotEqual(t *testing.T) {
 
 func TestAssertNotEqualValues(t *testing.T) {
 	t.Run("EqualPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.NotEqualValues(uint32(123), uint64(123))
 		})
 	})
@@ -668,7 +682,7 @@ func TestAssertNotEqualValues(t *testing.T) {
 
 func TestAssertNotErrorIs(t *testing.T) {
 	t.Run("MatchPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.NotErrorIs(errors.Join(errors.New("foo"), io.EOF), io.EOF)
 		})
 	})
@@ -679,7 +693,7 @@ func TestAssertNotErrorIs(t *testing.T) {
 
 func TestAssertNotNil(t *testing.T) {
 	t.Run("NilPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.NotNil(nil)
 		})
 	})
@@ -691,19 +705,20 @@ func TestAssertNotNil(t *testing.T) {
 
 func TestAssertNotSame(t *testing.T) {
 	t.Run("SamePanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.NotSame(t, t)
 		})
 	})
 
 	t.Run("NotSameOk", func(t *testing.T) {
-		assert.NotSame(t, nil)
+		var f *TestingT
+		assert.NotSame(t, f)
 	})
 }
 
 func TestAssertNotSubset(t *testing.T) {
 	t.Run("SubsetPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.NotSubset([]int{1, 3, 4}, []int{1, 3})
 		})
 	})
@@ -715,7 +730,7 @@ func TestAssertNotSubset(t *testing.T) {
 
 func TestAssertNotZero(t *testing.T) {
 	t.Run("ZeroPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.NotZero(false)
 		})
 	})
@@ -731,7 +746,7 @@ func TestAssertPositive(t *testing.T) {
 	})
 
 	t.Run("NegativePanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.Positive(-2)
 		})
 	})
@@ -743,7 +758,7 @@ func TestAssertRegexp(t *testing.T) {
 	})
 
 	t.Run("NoMatchPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.Regexp(regexp.MustCompile(`\d+`), "abc")
 		})
 	})
@@ -755,7 +770,7 @@ func TestAssertSame(t *testing.T) {
 	})
 
 	t.Run("NotSamePanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.Same(t, nil)
 		})
 	})
@@ -767,7 +782,7 @@ func TestAssertSubset(t *testing.T) {
 	})
 
 	t.Run("NotSubsetPanics", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.Subset([]int{1, 3, 4}, []int{1, 2})
 		})
 	})
@@ -775,7 +790,7 @@ func TestAssertSubset(t *testing.T) {
 
 func TestAssertTrue(t *testing.T) {
 	t.Run("FalseValuePanic", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.True(false)
 		})
 	})
@@ -785,25 +800,13 @@ func TestAssertTrue(t *testing.T) {
 	})
 }
 
-func TestAssertYAMLEq(t *testing.T) {
-	t.Run("EqualOk", func(t *testing.T) {
-		assert.YAMLEq(`{"hello": "world", "foo": "bar"}`, `{"foo": "bar", "hello": "world"}`)
-	})
-
-	t.Run("NotMatchPanics", func(t *testing.T) {
-		require.Panics(t, func() {
-			assert.YAMLEq(`{"bye": "world", "foo": "bar"}`, `{"foo": "bar", "hello": "world"}`)
-		})
-	})
-}
-
 func TestAssertZero(t *testing.T) {
 	t.Run("ZeroOk", func(t *testing.T) {
 		assert.Zero(false)
 	})
 
 	t.Run("NotZeroOk", func(t *testing.T) {
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.Zero(true)
 		})
 	})
@@ -818,7 +821,7 @@ func TestAssertLocked(t *testing.T) {
 
 	t.Run("Unlocked", func(t *testing.T) {
 		var mu sync.Mutex
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.Locked(&mu)
 		})
 	})
@@ -833,7 +836,7 @@ func TestAssertUnlocked(t *testing.T) {
 	t.Run("Locked", func(t *testing.T) {
 		var mu sync.Mutex
 		mu.Lock()
-		require.Panics(t, func() {
+		requirePanics(t, func() {
 			assert.Unlocked(&mu)
 		})
 	})

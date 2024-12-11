@@ -8,7 +8,7 @@ import (
 )
 
 // isOrdered checks that collection contains orderable elements.
-func isOrdered(object interface{}, allowedComparesResults []CompareType, failMessage string, msgAndArgs ...interface{}) bool {
+func isOrdered(object interface{}, allowedComparesResults []compareResult, failMessage string, msgAndArgs ...interface{}) bool {
 	objKind := reflect.TypeOf(object).Kind()
 	if objKind != reflect.Slice && objKind != reflect.Array {
 		return false
@@ -52,7 +52,7 @@ func isOrdered(object interface{}, allowedComparesResults []CompareType, failMes
 //	assert.IsIncreasing([]float{1, 2})
 //	assert.IsIncreasing([]string{"a", "b"})
 func IsIncreasing(object interface{}, msgAndArgs ...interface{}) bool {
-	return isOrdered(object, []CompareType{compareLess}, "\"%v\" is not less than \"%v\"", msgAndArgs...)
+	return isOrdered(object, []compareResult{compareLess}, "\"%v\" is not less than \"%v\"", msgAndArgs...)
 }
 
 // IsNonIncreasing asserts that the collection is not increasing
@@ -61,7 +61,7 @@ func IsIncreasing(object interface{}, msgAndArgs ...interface{}) bool {
 //	assert.IsNonIncreasing([]float{2, 1})
 //	assert.IsNonIncreasing([]string{"b", "a"})
 func IsNonIncreasing(object interface{}, msgAndArgs ...interface{}) bool {
-	return isOrdered(object, []CompareType{compareEqual, compareGreater}, "\"%v\" is not greater than or equal to \"%v\"", msgAndArgs...)
+	return isOrdered(object, []compareResult{compareEqual, compareGreater}, "\"%v\" is not greater than or equal to \"%v\"", msgAndArgs...)
 }
 
 // IsDecreasing asserts that the collection is decreasing
@@ -70,7 +70,7 @@ func IsNonIncreasing(object interface{}, msgAndArgs ...interface{}) bool {
 //	assert.IsDecreasing([]float{2, 1})
 //	assert.IsDecreasing([]string{"b", "a"})
 func IsDecreasing(object interface{}, msgAndArgs ...interface{}) bool {
-	return isOrdered(object, []CompareType{compareGreater}, "\"%v\" is not greater than \"%v\"", msgAndArgs...)
+	return isOrdered(object, []compareResult{compareGreater}, "\"%v\" is not greater than \"%v\"", msgAndArgs...)
 }
 
 // IsNonDecreasing asserts that the collection is not decreasing
@@ -79,5 +79,5 @@ func IsDecreasing(object interface{}, msgAndArgs ...interface{}) bool {
 //	assert.IsNonDecreasing([]float{1, 2})
 //	assert.IsNonDecreasing([]string{"a", "b"})
 func IsNonDecreasing(object interface{}, msgAndArgs ...interface{}) bool {
-	return isOrdered(object, []CompareType{compareLess, compareEqual}, "\"%v\" is not less than or equal to \"%v\"", msgAndArgs...)
+	return isOrdered(object, []compareResult{compareLess, compareEqual}, "\"%v\" is not less than or equal to \"%v\"", msgAndArgs...)
 }

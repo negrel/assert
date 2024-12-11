@@ -82,8 +82,8 @@ func EqualExportedValuesf(expected interface{}, actual interface{}, msg string, 
 	return EqualExportedValues(expected, actual, append([]interface{}{msg}, args...)...)
 }
 
-// EqualValuesf asserts that two objects are equal or convertible to the same types
-// and equal.
+// EqualValuesf asserts that two objects are equal or convertible to the larger
+// type and equal.
 //
 //	assert.EqualValuesf(uint32(123), int32(123), "error message %s", "formatted")
 func EqualValuesf(expected interface{}, actual interface{}, msg string, args ...interface{}) bool {
@@ -146,7 +146,7 @@ func Eventuallyf(condition func() bool, waitFor time.Duration, tick time.Duratio
 //	assert.EventuallyWithTf(func(c *assert.CollectT, "error message %s", "formatted") {
 //		// add assertions as needed; any assertion failure will fail the current tick
 //		assert.True(c, externalValue, "expected 'externalValue' to be true")
-//	}, 1*time.Second, 10*time.Second, "external state has not changed to 'true'; still false")
+//	}, 10*time.Second, 1*time.Second, "external state has not changed to 'true'; still false")
 func EventuallyWithTf(condition func(collect *CollectT), waitFor time.Duration, tick time.Duration, msg string, args ...interface{}) bool {
 	return EventuallyWithT(condition, waitFor, tick, append([]interface{}{msg}, args...)...)
 }
@@ -420,6 +420,20 @@ func NotContainsf(s interface{}, contains interface{}, msg string, args ...inter
 	return NotContains(s, contains, append([]interface{}{msg}, args...)...)
 }
 
+// NotElementsMatchf asserts that the specified listA(array, slice...) is NOT equal to specified
+// listB(array, slice...) ignoring the order of the elements. If there are duplicate elements,
+// the number of appearances of each of them in both lists should not match.
+// This is an inverse of ElementsMatch.
+//
+// assert.NotElementsMatchf([1, 1, 2, 3], [1, 1, 2, 3], "error message %s", "formatted") -> false
+//
+// assert.NotElementsMatchf([1, 1, 2, 3], [1, 2, 3], "error message %s", "formatted") -> true
+//
+// assert.NotElementsMatchf([1, 2, 3], [1, 2, 4], "error message %s", "formatted") -> true
+func NotElementsMatchf(listA interface{}, listB interface{}, msg string, args ...interface{}) bool {
+	return NotElementsMatch(listA, listB, append([]interface{}{msg}, args...)...)
+}
+
 // NotEmptyf asserts that the specified object is NOT empty.  I.e. not nil, "", false, 0 or either
 // a slice or a channel with len == 0.
 //
@@ -447,7 +461,13 @@ func NotEqualValuesf(expected interface{}, actual interface{}, msg string, args 
 	return NotEqualValues(expected, actual, append([]interface{}{msg}, args...)...)
 }
 
-// NotErrorIsf asserts that at none of the errors in err's chain matches target.
+// NotErrorAsf asserts that none of the errors in err's chain matches target,
+// but if so, sets target to that error value.
+func NotErrorAsf(err error, target interface{}, msg string, args ...interface{}) bool {
+	return NotErrorAs(err, target, append([]interface{}{msg}, args...)...)
+}
+
+// NotErrorIsf asserts that none of the errors in err's chain matches target.
 // This is a wrapper for errors.Is.
 func NotErrorIsf(err error, target error, msg string, args ...interface{}) bool {
 	return NotErrorIs(err, target, append([]interface{}{msg}, args...)...)
@@ -588,9 +608,6 @@ func WithinRangef(actual time.Time, start time.Time, end time.Time, msg string, 
 }
 
 // YAMLEqf asserts that two YAML strings are equivalent.
-func YAMLEqf(expected string, actual string, msg string, args ...interface{}) bool {
-	return YAMLEq(expected, actual, append([]interface{}{msg}, args...)...)
-}
 
 // Zerof asserts that i is the zero value for its type.
 func Zerof(i interface{}, msg string, args ...interface{}) bool {

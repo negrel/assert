@@ -7,10 +7,13 @@ import (
 	"time"
 )
 
-type CompareType int
+// Deprecated: CompareType has only ever been for internal use and has accidentally been published since v1.6.0. Do not use it.
+type CompareType = compareResult
+
+type compareResult int
 
 const (
-	compareLess CompareType = iota - 1
+	compareLess compareResult = iota - 1
 	compareEqual
 	compareGreater
 )
@@ -83,7 +86,7 @@ func Positive(e interface{}, msgAndArgs ...interface{}) {}
 //	assert.Negative(-1.23)
 func Negative(e interface{}, msgAndArgs ...interface{}) {}
 
-func compareTwoValues(e1 interface{}, e2 interface{}, allowedComparesResults []CompareType, failMessage string, msgAndArgs ...interface{}) {
+func compareTwoValues(e1 interface{}, e2 interface{}, allowedComparesResults []compareResult, failMessage string, msgAndArgs ...interface{}) {
 }
 
-func containsValue(values []CompareType, value CompareType) {}
+func containsValue(values []compareResult, value compareResult) {}

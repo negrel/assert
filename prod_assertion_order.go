@@ -3,7 +3,7 @@
 package assert
 
 // isOrdered checks that collection contains orderable elements.
-func isOrdered(object interface{}, allowedComparesResults []CompareType, failMessage string, msgAndArgs ...interface{}) {
+func isOrdered(object interface{}, allowedComparesResults []compareResult, failMessage string, msgAndArgs ...interface{}) {
 }
 
 // IsIncreasing asserts that the collection is increasing

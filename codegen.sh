@@ -54,6 +54,9 @@ for f in ./*.go; do
 	# 	panic("test failed and t is missing `FailNow()`")
 	# }
 	sed -i '/if t, ok := t.(failNower); ok {/,/}$/d' "$f"
+
+	# Delete YAML functions:
+	sed -i '/func YAML.*{/,/^}$/d' "$f"
 done
 
 # Create prod_* files that will contain empty function.

@@ -21,7 +21,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/pmezard/go-difflib/difflib"
-	"gopkg.in/yaml.v3"
+	// Wrapper around gopkg.in/yaml.v3
 )
 
 //go:generate sh -c "cd ../_codegen && go build && cd - && ../_codegen/_codegen -output-package=assert -template=assertion_format.go.tmpl"
@@ -46,6 +46,10 @@ type BoolAssertionFunc func(bool, ...interface{}) bool
 // ErrorAssertionFunc is a common function prototype when validating an error value.  Can be useful
 // for table driven tests.
 type ErrorAssertionFunc func(error, ...interface{}) bool
+
+// PanicAssertionFunc is a common function prototype when validating a panic value.  Can be useful
+// for table driven tests.
+type PanicAssertionFunc = func(f PanicTestFunc, msgAndArgs ...interface{}) bool
 
 // Comparison is a custom function that returns true on success and false on failure
 type Comparison func() (success bool)
@@ -467,7 +471,13 @@ func validateEqualArgs(expected, actual interface{}) error {
 // determined based on the equality of both type and value.
 func Same(expected, actual interface{}, msgAndArgs ...interface{}) bool {
 
-	if !samePointers(expected, actual) {
+	same, ok := samePointers(expected, actual)
+	if !ok {
+		return Fail("Both arguments must be pointers", msgAndArgs...)
+	}
+
+	if !same {
+		// both are pointers but not the same type & pointing to the same address
 		return Fail(fmt.Sprintf("Not same: \n"+
 			"expected: %p %#v\n"+
 			"actual  : %p %#v", expected, expected, actual, actual), msgAndArgs...)
@@ -484,7 +494,13 @@ func Same(expected, actual interface{}, msgAndArgs ...interface{}) bool {
 // determined based on the equality of both type and value.
 func NotSame(expected, actual interface{}, msgAndArgs ...interface{}) bool {
 
-	if samePointers(expected, actual) {
+	same, ok := samePointers(expected, actual)
+	if !ok {
+		//fails when the arguments are not pointers
+		return !(Fail("Both arguments must be pointers", msgAndArgs...))
+	}
+
+	if same {
 		return Fail(fmt.Sprintf(
 			"Expected and actual point to the same object: %p %#v",
 			expected, expected), msgAndArgs...)
@@ -492,21 +508,23 @@ func NotSame(expected, actual interface{}, msgAndArgs ...interface{}) bool {
 	return true
 }
 
-// samePointers compares two generic interface objects and returns whether
-// they point to the same object
-func samePointers(first, second interface{}) bool {
+// samePointers checks if two generic interface objects are pointers of the same
+// type pointing to the same object. It returns two values: same indicating if
+// they are the same type and point to the same object, and ok indicating that
+// both inputs are pointers.
+func samePointers(first, second interface{}) (same bool, ok bool) {
 	firstPtr, secondPtr := reflect.ValueOf(first), reflect.ValueOf(second)
 	if firstPtr.Kind() != reflect.Ptr || secondPtr.Kind() != reflect.Ptr {
-		return false
+		return false, false //not both are pointers
 	}
 
 	firstType, secondType := reflect.TypeOf(first), reflect.TypeOf(second)
 	if firstType != secondType {
-		return false
+		return false, true // both are pointers, but of different types
 	}
 
 	// compare pointer addresses
-	return first == second
+	return first == second, true
 }
 
 // formatUnequalValues takes two values of arbitrary types and returns string
@@ -540,8 +558,8 @@ func truncatingFormat(data interface{}) string {
 	return value
 }
 
-// EqualValues asserts that two objects are equal or convertible to the same types
-// and equal.
+// EqualValues asserts that two objects are equal or convertible to the larger
+// type and equal.
 //
 //	assert.EqualValues(uint32(123), int32(123))
 func EqualValues(expected, actual interface{}, msgAndArgs ...interface{}) bool {
@@ -575,21 +593,6 @@ func EqualExportedValues(expected, actual interface{}, msgAndArgs ...interface{}
 
 	if aType != bType {
 		return Fail(fmt.Sprintf("Types expected to match exactly\n\t%v != %v", aType, bType), msgAndArgs...)
-	}
-
-	if aType.Kind() == reflect.Ptr {
-		aType = aType.Elem()
-	}
-	if bType.Kind() == reflect.Ptr {
-		bType = bType.Elem()
-	}
-
-	if aType.Kind() != reflect.Struct {
-		return Fail(fmt.Sprintf("Types expected to both be struct or pointer to struct \n\t%v != %v", aType.Kind(), reflect.Struct), msgAndArgs...)
-	}
-
-	if bType.Kind() != reflect.Struct {
-		return Fail(fmt.Sprintf("Types expected to both be struct or pointer to struct \n\t%v != %v", bType.Kind(), reflect.Struct), msgAndArgs...)
 	}
 
 	expected = copyExportedFields(expected)
@@ -1087,6 +1090,36 @@ func formatListDiff(listA, listB interface{}, extraA, extraB []interface{}) stri
 	return msg.String()
 }
 
+// NotElementsMatch asserts that the specified listA(array, slice...) is NOT equal to specified
+// listB(array, slice...) ignoring the order of the elements. If there are duplicate elements,
+// the number of appearances of each of them in both lists should not match.
+// This is an inverse of ElementsMatch.
+//
+// assert.NotElementsMatch([1, 1, 2, 3], [1, 1, 2, 3]) -> false
+//
+// assert.NotElementsMatch([1, 1, 2, 3], [1, 2, 3]) -> true
+//
+// assert.NotElementsMatch([1, 2, 3], [1, 2, 4]) -> true
+func NotElementsMatch(listA, listB interface{}, msgAndArgs ...interface{}) (ok bool) {
+	if isEmpty(listA) && isEmpty(listB) {
+		return Fail("listA and listB contain the same elements", msgAndArgs)
+	}
+
+	if !isList(listA, msgAndArgs...) {
+		return Fail("listA is not a list type", msgAndArgs...)
+	}
+	if !isList(listB, msgAndArgs...) {
+		return Fail("listB is not a list type", msgAndArgs...)
+	}
+
+	extraA, extraB := diffLists(listA, listB)
+	if len(extraA) == 0 && len(extraB) == 0 {
+		return Fail("listA and listB contain the same elements", msgAndArgs)
+	}
+
+	return true
+}
+
 // Condition uses a Comparison to assert a complex condition.
 func Condition(comp Comparison, msgAndArgs ...interface{}) bool {
 	result := comp()
@@ -1372,6 +1405,9 @@ func InEpsilon(expected, actual interface{}, epsilon float64, msgAndArgs ...inte
 	if err != nil {
 		return Fail(err.Error(), msgAndArgs...)
 	}
+	if math.IsNaN(actualEpsilon) {
+		return Fail("relative error is NaN", msgAndArgs...)
+	}
 	if actualEpsilon > epsilon {
 		return Fail(fmt.Sprintf("Relative error is too high: %#v (expected)\n"+
 			"        < %#v (actual)", epsilon, actualEpsilon), msgAndArgs...)
@@ -1480,7 +1516,6 @@ func ErrorContains(theError error, contains string, msgAndArgs ...interface{}) b
 
 // matchRegexp return true if a specified regexp matches a string.
 func matchRegexp(rx interface{}, str interface{}) bool {
-
 	var r *regexp.Regexp
 	if rr, ok := rx.(*regexp.Regexp); ok {
 		r = rr
@@ -1488,7 +1523,14 @@ func matchRegexp(rx interface{}, str interface{}) bool {
 		r = regexp.MustCompile(fmt.Sprint(rx))
 	}
 
-	return (r.FindStringIndex(fmt.Sprint(str)) != nil)
+	switch v := str.(type) {
+	case []byte:
+		return r.Match(v)
+	case string:
+		return r.MatchString(v)
+	default:
+		return r.MatchString(fmt.Sprint(v))
+	}
 
 }
 
@@ -1617,19 +1659,6 @@ func JSONEq(expected string, actual string, msgAndArgs ...interface{}) bool {
 }
 
 // YAMLEq asserts that two YAML strings are equivalent.
-func YAMLEq(expected string, actual string, msgAndArgs ...interface{}) bool {
-	var expectedYAMLAsInterface, actualYAMLAsInterface interface{}
-
-	if err := yaml.Unmarshal([]byte(expected), &expectedYAMLAsInterface); err != nil {
-		return Fail(fmt.Sprintf("Expected value ('%s') is not valid yaml.\nYAML parsing error: '%s'", expected, err.Error()), msgAndArgs...)
-	}
-
-	if err := yaml.Unmarshal([]byte(actual), &actualYAMLAsInterface); err != nil {
-		return Fail(fmt.Sprintf("Input ('%s') needs to be valid yaml.\nYAML error: '%s'", actual, err.Error()), msgAndArgs...)
-	}
-
-	return Equal(expectedYAMLAsInterface, actualYAMLAsInterface, msgAndArgs...)
-}
 
 func typeAndKind(v interface{}) (reflect.Type, reflect.Kind) {
 	t := reflect.TypeOf(v)
@@ -1711,7 +1740,7 @@ var spewConfigStringerEnabled = spew.ConfigState{
 	MaxDepth:                10,
 }
 
-type tHelper interface {
+type tHelper = interface {
 	Helper()
 }
 
@@ -1747,6 +1776,9 @@ func Eventually(condition func() bool, waitFor time.Duration, tick time.Duration
 
 // CollectT implements the TestingT interface and collects all errors.
 type CollectT struct {
+	// A slice of errors. Non-nil slice denotes a failure.
+	// If it's non-nil but len(c.errors) == 0, this is also a failure
+	// obtained by direct c.FailNow() call.
 	errors []error
 }
 
@@ -1755,9 +1787,10 @@ func (c *CollectT) Errorf(format string, args ...interface{}) {
 	c.errors = append(c.errors, fmt.Errorf(format, args...))
 }
 
-// FailNow panics.
-func (*CollectT) FailNow() {
-	panic("Assertion failed")
+// FailNow stops execution by calling runtime.Goexit.
+func (c *CollectT) FailNow() {
+	c.fail()
+	runtime.Goexit()
 }
 
 // Deprecated: That was a method for internal usage that should not have been published. Now just panics.
@@ -1768,6 +1801,16 @@ func (*CollectT) Reset() {
 // Deprecated: That was a method for internal usage that should not have been published. Now just panics.
 func (*CollectT) Copy(TestingT) {
 	panic("Copy() is deprecated")
+}
+
+func (c *CollectT) fail() {
+	if !c.failed() {
+		c.errors = []error{} // Make it non-nil to mark a failure.
+	}
+}
+
+func (c *CollectT) failed() bool {
+	return c.errors != nil
 }
 
 // EventuallyWithT asserts that given condition will be met in waitFor time,
@@ -1787,11 +1830,11 @@ func (*CollectT) Copy(TestingT) {
 //	assert.EventuallyWithT(func(c *assert.CollectT) {
 //		// add assertions as needed; any assertion failure will fail the current tick
 //		assert.True(c, externalValue, "expected 'externalValue' to be true")
-//	}, 1*time.Second, 10*time.Second, "external state has not changed to 'true'; still false")
+//	}, 10*time.Second, 1*time.Second, "external state has not changed to 'true'; still false")
 func EventuallyWithT(condition func(collect *CollectT), waitFor time.Duration, tick time.Duration, msgAndArgs ...interface{}) bool {
 
 	var lastFinishedTickErrs []error
-	ch := make(chan []error, 1)
+	ch := make(chan *CollectT, 1)
 
 	timer := time.NewTimer(waitFor)
 	defer timer.Stop()
@@ -1811,16 +1854,16 @@ func EventuallyWithT(condition func(collect *CollectT), waitFor time.Duration, t
 			go func() {
 				collect := new(CollectT)
 				defer func() {
-					ch <- collect.errors
+					ch <- collect
 				}()
 				condition(collect)
 			}()
-		case errs := <-ch:
-			if len(errs) == 0 {
+		case collect := <-ch:
+			if !collect.failed() {
 				return true
 			}
 			// Keep the errors from the last ended condition, so that they can be copied to t if timeout is reached.
-			lastFinishedTickErrs = errs
+			lastFinishedTickErrs = collect.errors
 			tick = ticker.C
 		}
 	}
@@ -1876,7 +1919,7 @@ func ErrorIs(err, target error, msgAndArgs ...interface{}) bool {
 	), msgAndArgs...)
 }
 
-// NotErrorIs asserts that at none of the errors in err's chain matches target.
+// NotErrorIs asserts that none of the errors in err's chain matches target.
 // This is a wrapper for errors.Is.
 func NotErrorIs(err, target error, msgAndArgs ...interface{}) bool {
 	if !errors.Is(err, target) {
@@ -1907,6 +1950,21 @@ func ErrorAs(err error, target interface{}, msgAndArgs ...interface{}) bool {
 
 	return Fail(fmt.Sprintf("Should be in error chain:\n"+
 		"expected: %q\n"+
+		"in chain: %s", target, chain,
+	), msgAndArgs...)
+}
+
+// NotErrorAs asserts that none of the errors in err's chain matches target,
+// but if so, sets target to that error value.
+func NotErrorAs(err error, target interface{}, msgAndArgs ...interface{}) bool {
+	if !errors.As(err, target) {
+		return true
+	}
+
+	chain := buildErrorChainString(err)
+
+	return Fail(fmt.Sprintf("Target error should not be in err chain:\n"+
+		"found: %q\n"+
 		"in chain: %s", target, chain,
 	), msgAndArgs...)
 }

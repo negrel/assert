@@ -67,8 +67,8 @@ func EqualErrorf(theError error, errString string, msg string, args ...interface
 func EqualExportedValuesf(expected interface{}, actual interface{}, msg string, args ...interface{}) {
 }
 
-// EqualValuesf asserts that two objects are equal or convertible to the same types
-// and equal.
+// EqualValuesf asserts that two objects are equal or convertible to the larger
+// type and equal.
 //
 //	assert.EqualValuesf(uint32(123), int32(123), "error message %s", "formatted")
 func EqualValuesf(expected interface{}, actual interface{}, msg string, args ...interface{}) {}
@@ -326,6 +326,18 @@ func NoFileExistsf(path string, msg string, args ...interface{}) {}
 //	assert.NotContainsf({"Hello": "World"}, "Earth", "error message %s", "formatted")
 func NotContainsf(s interface{}, contains interface{}, msg string, args ...interface{}) {}
 
+// NotElementsMatchf asserts that the specified listA(array, slice...) is NOT equal to specified
+// listB(array, slice...) ignoring the order of the elements. If there are duplicate elements,
+// the number of appearances of each of them in both lists should not match.
+// This is an inverse of ElementsMatch.
+//
+// assert.NotElementsMatchf([1, 1, 2, 3], [1, 1, 2, 3], "error message %s", "formatted") -> false
+//
+// assert.NotElementsMatchf([1, 1, 2, 3], [1, 2, 3], "error message %s", "formatted") -> true
+//
+// assert.NotElementsMatchf([1, 2, 3], [1, 2, 4], "error message %s", "formatted") -> true
+func NotElementsMatchf(listA interface{}, listB interface{}, msg string, args ...interface{}) {}
+
 // NotEmptyf asserts that the specified object is NOT empty.  I.e. not nil, "", false, 0 or either
 // a slice or a channel with len == 0.
 //
@@ -347,7 +359,11 @@ func NotEqualf(expected interface{}, actual interface{}, msg string, args ...int
 //	assert.NotEqualValuesf(obj1, obj2, "error message %s", "formatted")
 func NotEqualValuesf(expected interface{}, actual interface{}, msg string, args ...interface{}) {}
 
-// NotErrorIsf asserts that at none of the errors in err's chain matches target.
+// NotErrorAsf asserts that none of the errors in err's chain matches target,
+// but if so, sets target to that error value.
+func NotErrorAsf(err error, target interface{}, msg string, args ...interface{}) {}
+
+// NotErrorIsf asserts that none of the errors in err's chain matches target.
 // This is a wrapper for errors.Is.
 func NotErrorIsf(err error, target error, msg string, args ...interface{}) {}
 
@@ -455,7 +471,6 @@ func WithinRangef(actual time.Time, start time.Time, end time.Time, msg string, 
 }
 
 // YAMLEqf asserts that two YAML strings are equivalent.
-func YAMLEqf(expected string, actual string, msg string, args ...interface{}) {}
 
 // Zerof asserts that i is the zero value for its type.
 func Zerof(i interface{}, msg string, args ...interface{}) {}
